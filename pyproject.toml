@@ -1,6 +1,6 @@
 [project]
 name = "omnipresense"
-version = "0.1.0"
+version = "0.1.1"
 description = "A comprehensive, type-safe Python interface for OmniPreSense radar sensors"
 readme = "README.md"
 requires-python = ">=3.8.1"
@@ -41,10 +41,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/OmnipresenseRadar"
-Documentation = "https://omnipresense-radar.readthedocs.io/"
-Repository = "https://github.com/yourusername/OmnipresenseRadar.git"
-Issues = "https://github.com/yourusername/OmnipresenseRadar/issues"
+Homepage = "https://github.com/graeb/OmnipresenseRadar"
+Documentation = "https://github.com/graeb/OmnipresenseRadar"
+Repository = "https://github.com/graeb/OmnipresenseRadar.git"
+Issues = "https://github.com/graeb/OmnipresenseRadar/issues"
 
 [build-system]
 requires = ["hatchling"]
@@ -102,7 +102,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"] # allow assert in tests
+"tests/*" = ["S101"]                    # allow assert in tests
 "examples/*" = ["E722", "B904", "S110"] # relax type checking for examples
 
 [tool.mypy]
