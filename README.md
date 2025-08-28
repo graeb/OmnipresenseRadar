@@ -60,7 +60,7 @@ from omnipresense import create_radar, Units, SamplingRate
 import time
 
 # Create radar sensor
-radar = create_radar('OPS243-A', '/dev/ttyACM0')
+radar = create_radar('OPS243-C', '/dev/ttyACM0')
 
 # Use context manager for automatic cleanup
 with radar:
@@ -83,75 +83,32 @@ with radar:
 
 ## 📋 Requirements
 
-- **Python**: 3.7+
+- **Python**: 3.8.1+
 - **Dependencies**:
   - `pyserial` >= 3.4
-  - `typing-extensions` (Python < 3.8)
 
 ## 💡 Examples
 
-### Doppler Radar (Speed Detection)
-
-```python
-from omnipresense import create_radar, Units, Direction
-
-radar = create_radar('OPS241-A', '/dev/ttyUSB0')
-
-with radar:
-    radar.set_units(Units.MILES_PER_HOUR)
-    radar.set_speed_filter(min_speed=5, max_speed=100)  # Filter 5-100 mph
-    radar.set_direction_filter(Direction.APPROACHING)   # Only approaching objects
-    
-    def speed_callback(reading):
-        print(f"Vehicle: {reading.speed:.1f} mph approaching")
-    
-    radar.start_streaming(speed_callback)
-```
-
-### FMCW Radar (Range Detection)
+### Basic Usage
 
 ```python
 from omnipresense import create_radar, Units
 
-radar = create_radar('OPS241-B', '/dev/ttyUSB0')
-
-with radar:
-    radar.set_units(Units.METERS)
-    radar.set_range_filter(min_range=1.0, max_range=15.0)
-    radar.enable_json_output(True)
-    
-    def range_callback(reading):
-        print(f"Object at {reading.range_m:.2f}m (signal: {reading.magnitude})")
-    
-    radar.start_streaming(range_callback)
-```
-
-### Combined Radar (Speed + Range)
-
-```python
-from omnipresense import create_radar, Units, SamplingRate
-
-radar = create_radar('OPS243-C', '/dev/ttyUSB0')
+radar = create_radar('OPS243-C', '/dev/ttyACM0')
 
 with radar:
     radar.set_units(Units.METERS_PER_SECOND)
-    radar.set_sampling_rate(SamplingRate.HZ_10000)
-    radar.enable_magnitude_output(True)
-    radar.enable_timestamp_output(True)
     
-    def combined_callback(reading):
-        data = []
+    def on_detection(reading):
         if reading.speed:
-            data.append(f"Speed: {reading.speed:.2f} m/s")
+            print(f"Speed: {reading.speed:.2f} m/s")
         if reading.range_m:
-            data.append(f"Range: {reading.range_m:.2f} m")
-        if reading.magnitude:
-            data.append(f"Signal: {reading.magnitude:.0f}")
-        
-        print(f"[{reading.timestamp:.3f}] {' | '.join(data)}")
+            print(f"Range: {reading.range_m:.2f} m")
     
-    radar.start_streaming(combined_callback)
+    radar.start_streaming(on_detection)
 ```
+
+> 📁 **More Examples**: See the [`examples/`](examples/) directory for additional scripts including Doppler-only sensors, FMCW sensors, debugging tools, and advanced configurations.
 
 ## ⚙️ Advanced Configuration
 
@@ -346,6 +303,97 @@ This project is an **independent, unofficial** implementation developed by the c
 - **Hardware**: This library is designed to work with OmniPreSense radar sensors
 - **Support**: For hardware issues, contact [OmniPreSense directly](https://omnipresense.com/support/). For library issues, use our GitHub Issues.
 - **Warranty**: This software comes with no warranty. Use at your own risk.
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Permission Denied (Linux/macOS)
+
+```bash
+PermissionError: [Errno 13] Permission denied: '/dev/ttyUSB0'
+```
+
+**Solution for Linux:**
+
+```bash
+# Add your user to the dialout group
+sudo usermod -a -G dialout $USER
+
+# Log out and log back in for changes to take effect
+# Or reboot your system
+```
+
+**Solution for macOS:**
+
+```bash
+# Give permission to the serial port
+sudo chmod 666 /dev/cu.usbmodem*
+# Or run your Python script with sudo (not recommended)
+```
+
+#### Port Not Found
+
+```bash
+FileNotFoundError: could not open port /dev/ttyUSB0: No such file or directory
+```
+
+**Solutions:**
+
+1. **Check if device is connected**: `ls /dev/tty*` (Linux/macOS) or check Device Manager (Windows)
+2. **Try different port names**:
+   - Linux: `/dev/ttyUSB0`, `/dev/ttyUSB1`, `/dev/ttyACM0`, `/dev/ttyACM1`
+   - macOS: `/dev/cu.usbmodem*`, `/dev/cu.usbserial*`
+   - Windows: `COM3`, `COM4`, `COM5`, etc.
+3. **Install drivers**: Some radar modules may need specific USB-to-serial drivers
+
+#### No Data Received
+
+```python
+# Radar connects but no readings in callback
+```
+
+**Solutions:**
+
+1. **Check detection range**: Ensure objects are within sensor's detection range
+2. **Adjust thresholds**: Lower magnitude threshold for more sensitivity
+3. **Check power mode**: Ensure sensor is in active mode
+4. **Verify configuration**: Check units, sampling rate, and filters
+
+#### Import Errors
+
+```bash
+ModuleNotFoundError: No module named 'omnipresense'
+```
+
+**Solutions:**
+
+1. **Install package**: `pip install omnipresense`
+2. **Development install**: `pip install -e .` (from project root)
+3. **Check Python environment**: Ensure you're using the correct virtual environment
+
+#### Windows COM Port Issues
+
+On Windows, you may need to:
+
+1. Check Device Manager for the correct COM port number
+2. Install proper USB drivers for your radar module
+3. Try different COM ports (COM3, COM4, COM5, etc.)
+
+### Getting Help
+
+If you're still experiencing issues:
+
+1. **Check sensor specifications**: Verify your radar model and its capabilities
+2. **Review examples**: Look at the examples in the `examples/` directory
+3. **Enable debug logging**: Add logging to see detailed communication
+
+   ```python
+   import logging
+   logging.basicConfig(level=logging.DEBUG)
+   ```
+
+4. **Hardware verification**: Test with OmniPreSense's official software first
 
 ## 🆘 Support
 
