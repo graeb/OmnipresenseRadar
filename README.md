@@ -11,11 +11,15 @@
 
 **A comprehensive, type-safe Python interface for OmniPreSense radar sensors**
 
-*Supports all OPS241/OPS242/OPS243 radar models with full API coverage*
+_Supports all OPS241/OPS242/OPS243 radar models with full API coverage_
 
-> **⚠️ DISCLAIMER**: This is an **unofficial**, community-developed library. The author is **not affiliated** with OmniPreSense Corp. This library provides a Python interface for OmniPreSense radar sensors but is not endorsed or supported by the company.
+> **⚠️ DISCLAIMER**: This is an **unofficial**, community-developed library. The
+> author is **not affiliated** with OmniPreSense Corp. This library provides a
+> Python interface for OmniPreSense radar sensors but is not endorsed or
+> supported by the company.
 
-[🚀 Quick Start](#quick-start) • [📚 Documentation](#documentation) • [💡 Examples](#examples) • [🤝 Contributing](#contributing)
+[🚀 Quick Start](#quick-start) • [📚 Documentation](#documentation) •
+[💡 Examples](#examples) • [🤝 Contributing](#contributing)
 
 </div>
 
@@ -23,27 +27,32 @@
 
 ## ✨ Features
 
-- 📋 **Complete API Coverage** - All commands from the [official API documentation](https://omnipresense.com/wp-content/uploads/2019/10/AN-010-Q_API_Interface.pdf)
-- 🔒 **Type-Safe** - Full typing support with comprehensive enums and data classes
-- 📡 **Multiple Sensor Support** - Doppler (-A), FMCW (-B), and combined (-C) sensor types
+- 📋 **Complete API Coverage** - All commands from the
+  [official API documentation](https://omnipresense.com/wp-content/uploads/2019/10/AN-010-Q_API_Interface.pdf)
+- 🔒 **Type-Safe** - Full typing support with comprehensive enums and data
+  classes
+- 📡 **Multiple Sensor Support** - Doppler (-A), FMCW (-B), and combined (-C)
+  sensor types
 - 🧵 **Thread-Safe** - Robust serial communication with proper synchronization
 - 🔧 **Context Managers** - Automatic resource cleanup with `with` statements
-- 📊 **Rich Data Structures** - Structured radar readings with timestamps and metadata
+- 📊 **Rich Data Structures** - Structured radar readings with timestamps and
+  metadata
 - ⚡ **High Performance** - Efficient data streaming with configurable callbacks
-- 🛡️ **Error Handling** - Comprehensive exception hierarchy with detailed messages
+- 🛡️ **Error Handling** - Comprehensive exception hierarchy with detailed
+  messages
 - 📚 **Well Documented** - Extensive docstrings and usage examples
 
 ## 📡 Supported Models
 
-| Model | Type | Features | Detection Range | Max Speed |
-|-------|------|----------|----------------|-----------|
-| **OPS241-A** | Doppler | Motion, Speed, Direction, Magnitude | 20-25m | 31.1 m/s |
-| **OPS242-A** | Doppler | Enhanced sensitivity | 20-25m | 31.1 m/s |
-| **OPS243-A** | Doppler | Advanced + Range* | 75-100m | 31.1 m/s |
-| **OPS241-B** | FMCW | Range, Magnitude | 15-20m | N/A |
-| **OPS243-C** | Combined | All features | 50-60m | 31.1 m/s |
+| Model        | Type     | Features                            | Detection Range | Max Speed |
+| ------------ | -------- | ----------------------------------- | --------------- | --------- |
+| **OPS241-A** | Doppler  | Motion, Speed, Direction, Magnitude | 20-25m          | 31.1 m/s  |
+| **OPS242-A** | Doppler  | Enhanced sensitivity                | 20-25m          | 31.1 m/s  |
+| **OPS243-A** | Doppler  | Advanced + Range\*                  | 75-100m         | 31.1 m/s  |
+| **OPS241-B** | FMCW     | Range, Magnitude                    | 15-20m          | N/A       |
+| **OPS243-C** | Combined | All features                        | 50-60m          | 31.1 m/s  |
 
-*Range measurement pending in firmware
+\*Range measurement pending in firmware
 
 ## 🚀 Quick Start
 
@@ -68,14 +77,14 @@ with radar:
     radar.set_units(Units.METERS_PER_SECOND)
     radar.set_sampling_rate(SamplingRate.HZ_10000)
     radar.set_magnitude_threshold(20)
-    
+
     # Define callback for radar data
     def on_detection(reading):
         if reading.speed and reading.speed > 1.0:
             print(f"Speed: {reading.speed:.2f} m/s")
             print(f"Direction: {reading.direction.value}")
             print(f"Magnitude: {reading.magnitude}")
-    
+
     # Start streaming data
     radar.start_streaming(on_detection)
     time.sleep(10)  # Stream for 10 seconds
@@ -98,17 +107,19 @@ radar = create_radar('OPS243-C', '/dev/ttyACM0')
 
 with radar:
     radar.set_units(Units.METERS_PER_SECOND)
-    
+
     def on_detection(reading):
         if reading.speed:
             print(f"Speed: {reading.speed:.2f} m/s")
         if reading.range_m:
             print(f"Range: {reading.range_m:.2f} m")
-    
+
     radar.start_streaming(on_detection)
 ```
 
-> 📁 **More Examples**: See the [`examples/`](examples/) directory for additional scripts including Doppler-only sensors, FMCW sensors, debugging tools, and advanced configurations.
+> 📁 **More Examples**: See the [`examples/`](examples/) directory for
+> additional scripts including Doppler-only sensors, FMCW sensors, debugging
+> tools, and advanced configurations.
 
 ## ⚙️ Advanced Configuration
 
@@ -177,7 +188,7 @@ print(f"Board ID: {radar.get_board_id()}")
 
 ```python
 from omnipresense import (
-    RadarError, RadarConnectionError, 
+    RadarError, RadarConnectionError,
     RadarCommandError, RadarValidationError
 )
 
@@ -185,7 +196,7 @@ try:
     with create_radar('OPS241-A', '/dev/ttyUSB0') as radar:
         radar.set_units(Units.METERS_PER_SECOND)
         # ... use radar
-        
+
 except RadarConnectionError:
     print("Could not connect to radar sensor")
 except RadarValidationError as e:
@@ -255,10 +266,11 @@ bandit -r omnipresense/
 
 ### Pre-commit Hooks
 
-This project uses pre-commit hooks to ensure code quality. The following checks run automatically on each commit:
+This project uses pre-commit hooks to ensure code quality. The following checks
+run automatically on each commit:
 
 - **Code Formatting**: Black, isort for consistent style
-- **Linting**: Ruff for code quality and style issues  
+- **Linting**: Ruff for code quality and style issues
 - **Type Checking**: MyPy for static type analysis
 - **Security**: Bandit for security vulnerability scanning
 - **Dependencies**: Safety for known security vulnerabilities
@@ -269,7 +281,8 @@ This project uses pre-commit hooks to ensure code quality. The following checks 
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md)
+for details.
 
 1. **Fork** the repository
 2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
@@ -287,21 +300,27 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## 📄 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE)
+file for details.
 
 ## 🙏 Acknowledgments
 
-- **[OmniPreSense](https://omnipresense.com/)** for creating excellent radar sensors and comprehensive documentation
+- **[OmniPreSense](https://omnipresense.com/)** for creating excellent radar
+  sensors and comprehensive documentation
 - **Contributors** who help improve this library
 - **Community** for feedback and bug reports
 
 ## ⚖️ Legal Notice
 
-This project is an **independent, unofficial** implementation developed by the community. It is **not affiliated with, endorsed by, or supported by OmniPreSense Corp.**
+This project is an **independent, unofficial** implementation developed by the
+community. It is **not affiliated with, endorsed by, or supported by
+OmniPreSense Corp.**
 
 - **Trademark**: "OmniPreSense" is a trademark of OmniPreSense Corp.
 - **Hardware**: This library is designed to work with OmniPreSense radar sensors
-- **Support**: For hardware issues, contact [OmniPreSense directly](https://omnipresense.com/support/). For library issues, use our GitHub Issues.
+- **Support**: For hardware issues, contact
+  [OmniPreSense directly](https://omnipresense.com/support/). For library
+  issues, use our GitHub Issues.
 - **Warranty**: This software comes with no warranty. Use at your own risk.
 
 ## 🔧 Troubleshooting
@@ -340,12 +359,14 @@ FileNotFoundError: could not open port /dev/ttyUSB0: No such file or directory
 
 **Solutions:**
 
-1. **Check if device is connected**: `ls /dev/tty*` (Linux/macOS) or check Device Manager (Windows)
+1. **Check if device is connected**: `ls /dev/tty*` (Linux/macOS) or check
+   Device Manager (Windows)
 2. **Try different port names**:
    - Linux: `/dev/ttyUSB0`, `/dev/ttyUSB1`, `/dev/ttyACM0`, `/dev/ttyACM1`
    - macOS: `/dev/cu.usbmodem*`, `/dev/cu.usbserial*`
    - Windows: `COM3`, `COM4`, `COM5`, etc.
-3. **Install drivers**: Some radar modules may need specific USB-to-serial drivers
+3. **Install drivers**: Some radar modules may need specific USB-to-serial
+   drivers
 
 #### No Data Received
 
@@ -370,7 +391,8 @@ ModuleNotFoundError: No module named 'omnipresense'
 
 1. **Install package**: `pip install omnipresense`
 2. **Development install**: `pip install -e .` (from project root)
-3. **Check Python environment**: Ensure you're using the correct virtual environment
+3. **Check Python environment**: Ensure you're using the correct virtual
+   environment
 
 #### Windows COM Port Issues
 
@@ -397,8 +419,10 @@ If you're still experiencing issues:
 
 ## 🆘 Support
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/yourusername/OmnipresenseRadar/issues)
-- **Documentation**: [Read the full docs](https://OmnipresenseRadar.readthedocs.io/)
+- **GitHub Issues**:
+  [Report bugs or request features](https://github.com/yourusername/OmnipresenseRadar/issues)
+- **Documentation**:
+  [Read the full docs](https://OmnipresenseRadar.readthedocs.io/)
 - **Email**: <graeb.oskar@gmail.com>
 
 ---
@@ -407,6 +431,6 @@ If you're still experiencing issues:
 
 **⭐ Star this repo if it helps you build amazing radar applications! ⭐**
 
-*Made with ❤️ for the radar sensing community*
+_Made with ❤️ for the radar sensing community_
 
 </div>

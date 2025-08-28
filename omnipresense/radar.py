@@ -44,7 +44,7 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum, IntEnum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Type
 
 import serial
 
@@ -60,31 +60,21 @@ logger = logging.getLogger(__name__)
 class RadarError(Exception):
     """Base exception for all radar-related errors."""
 
-    pass
-
 
 class RadarConnectionError(RadarError):
     """Raised when connection to radar fails."""
-
-    pass
 
 
 class RadarCommandError(RadarError):
     """Raised when a radar command fails or returns an error."""
 
-    pass
-
 
 class RadarValidationError(RadarError):
     """Raised when parameter validation fails."""
 
-    pass
-
 
 class RadarTimeoutError(RadarError):
     """Raised when a radar operation times out."""
-
-    pass
 
 
 # =============================================================================
@@ -293,13 +283,13 @@ class OPSRadarSensor(ABC):
         logger.info(f"Initialized {self.__class__.__name__} on port {port}")
 
     # Context manager support
-    def __enter__(self):
+    def __enter__(self) -> "OPSRadarSensor":
         """Context manager entry - opens connection."""
         if not self.open():
             raise RadarConnectionError(f"Failed to open connection to {self.port_name}")
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Context manager exit - closes connection."""
         self.close()
 
@@ -331,9 +321,9 @@ class OPSRadarSensor(ABC):
         except Exception as e:
             logger.error(f"Failed to open radar serial connection: {e}")
             self.ser = None
-            raise RadarConnectionError(f"Failed to connect to radar: {e}")
+            raise RadarConnectionError(f"Failed to connect to radar: {e}") from e
 
-    def close(self):
+    def close(self) -> None:
         """Close serial connection and stop reader thread."""
         self.stop_streaming()
 
@@ -375,15 +365,21 @@ class OPSRadarSensor(ABC):
                 if not command.endswith("\n"):
                     command += "\n"
 
-                self.ser.write(command.encode("ascii"))
-                self.ser.flush()
+                if self.ser is not None:
+                    self.ser.write(command.encode("ascii"))
+                    self.ser.flush()
+                else:
+                    raise RadarCommandError("Serial connection not available")
                 logger.debug(f"Sent radar command: {command.strip()}")
 
                 if expect_response:
                     # Wait for response
-                    response = (
-                        self.ser.readline().decode("ascii", errors="ignore").strip()
-                    )
+                    if self.ser is not None:
+                        response = (
+                            self.ser.readline().decode("ascii", errors="ignore").strip()
+                        )
+                    else:
+                        raise RadarCommandError("Serial connection not available")
                     if response:
                         logger.debug(f"Received response: {response}")
                         return response
@@ -397,10 +393,10 @@ class OPSRadarSensor(ABC):
 
             except serial.SerialException as e:
                 logger.error(f"Serial error sending command '{command.strip()}': {e}")
-                raise RadarCommandError(f"Serial communication error: {e}")
+                raise RadarCommandError(f"Serial communication error: {e}") from e
             except Exception as e:
                 logger.error(f"Error sending command '{command.strip()}': {e}")
-                raise RadarCommandError(f"Command failed: {e}")
+                raise RadarCommandError(f"Command failed: {e}") from e
 
     # =============================================================================
     # Module Information Commands
@@ -423,7 +419,7 @@ class OPSRadarSensor(ABC):
             # Parse frequency
             try:
                 freq_val = float(frequency.split()[-1]) if frequency != "0" else 0.0
-            except:
+            except (ValueError, IndexError):
                 freq_val = 0.0
 
             # Determine sensor capabilities based on model
@@ -488,14 +484,14 @@ class OPSRadarSensor(ABC):
         response = self.send_command("?F", expect_response=True)
         try:
             return float(response.split()[-1]) if response else 0.0
-        except:
+        except (ValueError, IndexError):
             return 0.0
 
     # =============================================================================
     # Configuration Commands
     # =============================================================================
 
-    def set_units(self, units: Units):
+    def set_units(self, units: Units) -> None:
         """
         Set output units for measurements.
 
@@ -528,7 +524,7 @@ class OPSRadarSensor(ABC):
         self._config.units = units
         logger.info(f"Set units to {units.value}")
 
-    def set_sampling_rate(self, rate: SamplingRate):
+    def set_sampling_rate(self, rate: SamplingRate) -> None:
         """
         Set sampling rate.
 
@@ -543,7 +539,7 @@ class OPSRadarSensor(ABC):
         self._config.sampling_rate = rate
         logger.info(f"Set sampling rate to {rate.value} Hz")
 
-    def set_data_precision(self, precision: int):
+    def set_data_precision(self, precision: int) -> None:
         """
         Set data precision (decimal places).
 
@@ -557,7 +553,7 @@ class OPSRadarSensor(ABC):
         self._config.data_precision = precision
         logger.info(f"Set data precision to {precision} decimal places")
 
-    def set_magnitude_threshold(self, threshold: int, doppler: bool = True):
+    def set_magnitude_threshold(self, threshold: int, doppler: bool = True) -> None:
         """
         Set magnitude threshold for detection.
 
@@ -576,7 +572,7 @@ class OPSRadarSensor(ABC):
         self._config.magnitude_threshold = threshold
         logger.info(f"Set magnitude threshold to {threshold}")
 
-    def set_power_mode(self, mode: PowerMode):
+    def set_power_mode(self, mode: PowerMode) -> None:
         """
         Set sensor power mode.
 
@@ -588,7 +584,7 @@ class OPSRadarSensor(ABC):
         self._config.power_mode = mode
         logger.info(f"Set power mode to {mode.value}")
 
-    def set_buffer_size(self, size: int):
+    def set_buffer_size(self, size: int) -> None:
         """
         Set sampling buffer size.
 
@@ -619,7 +615,7 @@ class OPSRadarSensor(ABC):
         self._config.buffer_size = closest_size
         logger.info(f"Set buffer size to {closest_size}")
 
-    def set_duty_cycle(self, short_ms: int, long_ms: int = 0):
+    def set_duty_cycle(self, short_ms: int, long_ms: int = 0) -> None:
         """
         Set duty cycle timing.
 
@@ -648,7 +644,7 @@ class OPSRadarSensor(ABC):
 
     def set_speed_filter(
         self, min_speed: Optional[float] = None, max_speed: Optional[float] = None
-    ):
+    ) -> None:
         """
         Set speed filtering range.
 
@@ -679,7 +675,7 @@ class OPSRadarSensor(ABC):
 
     def set_range_filter(
         self, min_range: Optional[float] = None, max_range: Optional[float] = None
-    ):
+    ) -> None:
         """
         Set range filtering range.
 
@@ -706,7 +702,7 @@ class OPSRadarSensor(ABC):
             self._config.range_filter_max = max_range
             logger.info(f"Set maximum range filter to {max_range}")
 
-    def set_direction_filter(self, direction: Optional[Direction] = None):
+    def set_direction_filter(self, direction: Optional[Direction] = None) -> None:
         """
         Set direction filtering.
 
@@ -734,7 +730,7 @@ class OPSRadarSensor(ABC):
     # Output Control Commands
     # =============================================================================
 
-    def enable_output_mode(self, mode: OutputMode, enable: bool = True):
+    def enable_output_mode(self, mode: OutputMode, enable: bool = True) -> None:
         """
         Enable or disable specific output mode.
 
@@ -762,15 +758,15 @@ class OPSRadarSensor(ABC):
 
         logger.info(f"{'Enabled' if enable else 'Disabled'} output mode: {mode.value}")
 
-    def enable_json_output(self, enable: bool = True):
+    def enable_json_output(self, enable: bool = True) -> None:
         """Enable/disable JSON formatted output."""
         self.enable_output_mode(OutputMode.JSON, enable)
 
-    def enable_magnitude_output(self, enable: bool = True):
+    def enable_magnitude_output(self, enable: bool = True) -> None:
         """Enable/disable signal magnitude in output."""
         self.enable_output_mode(OutputMode.MAGNITUDE, enable)
 
-    def enable_timestamp_output(self, enable: bool = True):
+    def enable_timestamp_output(self, enable: bool = True) -> None:
         """Enable/disable timestamps in output."""
         self.enable_output_mode(OutputMode.TIMESTAMP, enable)
 
@@ -778,7 +774,7 @@ class OPSRadarSensor(ABC):
     # Data Streaming
     # =============================================================================
 
-    def start_streaming(self, callback: Callable[[RadarReading], None]):
+    def start_streaming(self, callback: Callable[[RadarReading], None]) -> None:
         """
         Start streaming radar data with callback.
 
@@ -795,7 +791,7 @@ class OPSRadarSensor(ABC):
         self._reader_thread.start()
         logger.info("Started radar data streaming")
 
-    def stop_streaming(self):
+    def stop_streaming(self) -> None:
         """Stop radar data streaming."""
         if self._reader_thread and self._reader_thread.is_alive():
             logger.info("Stopping radar data streaming...")
@@ -808,7 +804,7 @@ class OPSRadarSensor(ABC):
         self._reader_thread = None
         self._callback = None
 
-    def _read_loop(self):
+    def _read_loop(self) -> None:
         """Main data reading loop - runs in separate thread."""
         logger.debug("Radar data reader thread started")
         buf = b""
@@ -819,7 +815,7 @@ class OPSRadarSensor(ABC):
                     break
 
                 # Read chunk with timeout
-                chunk = self.ser.read(1024)
+                chunk = self.ser.read(1024) if self.ser else b""
                 if not chunk:
                     continue
 
@@ -853,8 +849,8 @@ class OPSRadarSensor(ABC):
                     reading = self._parse_radar_data(remaining_str)
                     if reading:
                         self._callback(reading)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Error parsing radar data: {e}")
 
         logger.debug("Radar data reader thread ended")
 
@@ -870,10 +866,9 @@ class OPSRadarSensor(ABC):
         Returns:
             RadarReading object or None if data cannot be parsed
         """
-        pass
 
     @abstractmethod
-    def _validate_units(self, units: Units):
+    def _validate_units(self, units: Units) -> None:
         """
         Validate that units are supported by this sensor type.
         Must be implemented by sensor-specific subclasses.
@@ -884,7 +879,6 @@ class OPSRadarSensor(ABC):
         Raises:
             RadarValidationError: If units not supported
         """
-        pass
 
     # =============================================================================
     # Utility Methods
@@ -894,13 +888,13 @@ class OPSRadarSensor(ABC):
         """Get current radar configuration."""
         return self._config
 
-    def reset_sensor(self):
+    def reset_sensor(self) -> None:
         """Reset sensor to default settings."""
         self.send_command("A!")
         self._config = RadarConfig()  # Reset local config
         logger.info("Sensor reset to defaults")
 
-    def save_config_to_memory(self):
+    def save_config_to_memory(self) -> None:
         """Save current configuration to persistent memory."""
         self.send_command("A.")
         logger.info("Configuration saved to persistent memory")
@@ -935,7 +929,7 @@ class OPS241A_DopplerRadar(OPSRadarSensor):
     - Detection range: 20-25m (RCS = 10)
     """
 
-    def _validate_units(self, units: Units):
+    def _validate_units(self, units: Units) -> None:
         """Validate units for Doppler sensor."""
         doppler_units = {
             Units.METERS_PER_SECOND,
@@ -982,12 +976,16 @@ class OPS241A_DopplerRadar(OPSRadarSensor):
             json_data = json.loads(data)
             return RadarReading(
                 speed=abs(float(json_data.get("speed", 0))),
-                direction=Direction.APPROACHING
-                if json_data.get("direction") == "+"
-                else Direction.RECEDING,
-                magnitude=float(json_data.get("magnitude", 0))
-                if "magnitude" in json_data
-                else None,
+                direction=(
+                    Direction.APPROACHING
+                    if json_data.get("direction") == "+"
+                    else Direction.RECEDING
+                ),
+                magnitude=(
+                    float(json_data.get("magnitude", 0))
+                    if "magnitude" in json_data
+                    else None
+                ),
                 timestamp=float(json_data.get("time", time.time())),
             )
         except (json.JSONDecodeError, ValueError, KeyError) as e:
@@ -1005,8 +1003,6 @@ class OPS242A_DopplerRadar(OPS241A_DopplerRadar):
     - Detection range: 20-25m (RCS = 10)
     """
 
-    pass
-
 
 class OPS243A_DopplerRadar(OPS241A_DopplerRadar):
     """
@@ -1019,8 +1015,6 @@ class OPS243A_DopplerRadar(OPS241A_DopplerRadar):
     - Detection range: 75-100m (RCS = 10)
     """
 
-    pass
-
 
 class OPS241B_FMCWRadar(OPSRadarSensor):
     """
@@ -1032,7 +1026,7 @@ class OPS241B_FMCWRadar(OPSRadarSensor):
     - Detection range: 15-20m (RCS = 10)
     """
 
-    def _validate_units(self, units: Units):
+    def _validate_units(self, units: Units) -> None:
         """Validate units for FMCW sensor."""
         fmcw_units = {Units.METERS, Units.CENTIMETERS, Units.FEET}
         if units not in fmcw_units:
@@ -1066,9 +1060,11 @@ class OPS241B_FMCWRadar(OPSRadarSensor):
             json_data = json.loads(data)
             return RadarReading(
                 range_m=float(json_data.get("range", 0)),
-                magnitude=float(json_data.get("magnitude", 0))
-                if "magnitude" in json_data
-                else None,
+                magnitude=(
+                    float(json_data.get("magnitude", 0))
+                    if "magnitude" in json_data
+                    else None
+                ),
                 timestamp=float(json_data.get("time", time.time())),
             )
         except (json.JSONDecodeError, ValueError, KeyError) as e:
@@ -1090,7 +1086,7 @@ class OPS243C_CombinedRadar(OPSRadarSensor):
     - Detection range: 50-60m (RCS = 10)
     """
 
-    def _validate_units(self, units: Units):
+    def _validate_units(self, units: Units) -> None:
         """Validate units for combined sensor - supports both speed and range units."""
         # Combined sensor supports all units
         all_units = set(Units)
@@ -1167,20 +1163,28 @@ class OPS243C_CombinedRadar(OPSRadarSensor):
         try:
             json_data = json.loads(data)
             return RadarReading(
-                speed=abs(float(json_data.get("speed", 0)))
-                if "speed" in json_data
-                else None,
-                direction=Direction.APPROACHING
-                if json_data.get("direction") == "+"
-                else Direction.RECEDING
-                if json_data.get("direction") == "-"
-                else None,
-                range_m=float(json_data.get("range", 0))
-                if "range" in json_data
-                else None,
-                magnitude=float(json_data.get("magnitude", 0))
-                if "magnitude" in json_data
-                else None,
+                speed=(
+                    abs(float(json_data.get("speed", 0)))
+                    if "speed" in json_data
+                    else None
+                ),
+                direction=(
+                    Direction.APPROACHING
+                    if json_data.get("direction") == "+"
+                    else (
+                        Direction.RECEDING
+                        if json_data.get("direction") == "-"
+                        else None
+                    )
+                ),
+                range_m=(
+                    float(json_data.get("range", 0)) if "range" in json_data else None
+                ),
+                magnitude=(
+                    float(json_data.get("magnitude", 0))
+                    if "magnitude" in json_data
+                    else None
+                ),
                 timestamp=float(json_data.get("time", time.time())),
             )
         except (json.JSONDecodeError, ValueError, KeyError) as e:
@@ -1193,7 +1197,7 @@ class OPS243C_CombinedRadar(OPSRadarSensor):
 # =============================================================================
 
 
-def create_radar(model: str, port: str, **kwargs) -> OPSRadarSensor:
+def create_radar(model: str, port: str, **kwargs: Any) -> OPSRadarSensor:
     """
     Factory function to create appropriate radar sensor instance.
 
@@ -1218,7 +1222,7 @@ def create_radar(model: str, port: str, **kwargs) -> OPSRadarSensor:
     """
     model = model.upper().replace("-", "").replace("_", "")
 
-    sensor_classes = {
+    sensor_classes: Dict[str, Type[OPSRadarSensor]] = {
         "OPS241A": OPS241A_DopplerRadar,
         "OPS242A": OPS242A_DopplerRadar,
         "OPS243A": OPS243A_DopplerRadar,
@@ -1318,7 +1322,7 @@ def get_model_info(model: str) -> Dict[str, Any]:
 # =============================================================================
 
 
-def example_doppler_usage():
+def example_doppler_usage() -> None:
     """Example usage of Doppler radar sensor."""
     print("=== Doppler Radar Example ===")
 
@@ -1338,7 +1342,7 @@ def example_doppler_usage():
             radar.enable_magnitude_output(True)
 
             # Data callback
-            def on_detection(reading: RadarReading):
+            def on_detection(reading: RadarReading) -> None:
                 if reading.speed and reading.speed > 1.0:  # Filter slow movements
                     print(
                         f"Detected: {reading.speed:.2f} m/s "
@@ -1359,7 +1363,7 @@ def example_doppler_usage():
         print("Stopped by user")
 
 
-def example_fmcw_usage():
+def example_fmcw_usage() -> None:
     """Example usage of FMCW radar sensor."""
     print("=== FMCW Radar Example ===")
 
@@ -1372,7 +1376,7 @@ def example_fmcw_usage():
             radar.set_magnitude_threshold(150)
             radar.set_range_filter(min_range=0.5, max_range=15.0)
 
-            def on_range_detection(reading: RadarReading):
+            def on_range_detection(reading: RadarReading) -> None:
                 if reading.range_m:
                     print(
                         f"Range: {reading.range_m:.2f} m, "
@@ -1387,7 +1391,7 @@ def example_fmcw_usage():
         print(f"Radar error: {e}")
 
 
-def example_combined_usage():
+def example_combined_usage() -> None:
     """Example usage of combined FMCW + Doppler radar."""
     print("=== Combined Radar Example ===")
 
@@ -1405,7 +1409,7 @@ def example_combined_usage():
             radar.enable_magnitude_output(True)
             radar.enable_timestamp_output(True)
 
-            def on_combined_detection(reading: RadarReading):
+            def on_combined_detection(reading: RadarReading) -> None:
                 parts = []
                 if reading.speed:
                     parts.append(f"Speed: {reading.speed:.2f} m/s")

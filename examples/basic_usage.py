@@ -4,8 +4,9 @@ Basic Usage Example
 Simple example showing basic radar setup and data streaming.
 """
 
-from omnipresense import create_radar, Units, SamplingRate
 import time
+
+from omnipresense import SamplingRate, Units, create_radar
 
 
 def main():
@@ -52,4 +53,3 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         print(f"Error: {e}")
-

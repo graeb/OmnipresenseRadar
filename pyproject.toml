@@ -82,6 +82,8 @@ ensure_newline_before_comments = true
 [tool.ruff]
 target-version = "py38"
 line-length = 88
+
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle errors
   "W",  # pycodestyle warnings
@@ -99,8 +101,9 @@ ignore = [
   "S101", # use of assert detected
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"] # allow assert in tests
+"examples/*" = ["E722", "B904", "S110"] # relax type checking for examples
 
 [tool.mypy]
 python_version = "3.8"

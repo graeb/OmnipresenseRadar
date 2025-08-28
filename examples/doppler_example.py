@@ -1,4 +1,4 @@
-from omnipresense import create_radar, Units, Direction
+from omnipresense import Direction, Units, create_radar
 
 radar = create_radar("OPS241-A", "/dev/ttyUSB0")
 

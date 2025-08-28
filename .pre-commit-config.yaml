@@ -16,9 +16,9 @@ repos:
       - id: check-merge-conflict
       - id: check-case-conflict
       - id: check-added-large-files
-        args: ['--maxkb=1000']
+        args: ["--maxkb=1000"]
       - id: mixed-line-ending
-        args: ['--fix=lf']
+        args: ["--fix=lf"]
       - id: requirements-txt-fixer
 
   # Python formatting with Black
@@ -51,6 +51,7 @@ repos:
       - id: mypy
         additional_dependencies: [types-pyserial]
         args: [--strict, --ignore-missing-imports]
+        exclude: "^examples/"
 
   # Security scanning with bandit
   - repo: https://github.com/PyCQA/bandit
@@ -60,11 +61,11 @@ repos:
         args: [-r, -f, json, -o, bandit-report.json]
         files: ^omnipresenseradar/.*\.py$
 
-  # Dependency vulnerability scanning
-  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
-    rev: v1.3.2
-    hooks:
-      - id: python-safety-dependencies-check
+  # Dependency vulnerability scanning (disabled - requires Poetry)
+  # - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+  #   rev: v1.3.2
+  #   hooks:
+  #     - id: python-safety-dependencies-check
 
   # Documentation checks
   - repo: https://github.com/pycqa/pydocstyle
@@ -115,8 +116,8 @@ ci:
 
     for more information, see https://pre-commit.ci
   autofix_prs: true
-  autoupdate_branch: ''
-  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_branch: ""
+  autoupdate_commit_msg: "[pre-commit.ci] pre-commit autoupdate"
   autoupdate_schedule: weekly
   skip: []
   submodules: false
