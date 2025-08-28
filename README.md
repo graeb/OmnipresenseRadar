@@ -2,11 +2,11 @@
 
 <div align="center">
 
-[![PyPI version](https://badge.fury.io/py/OmnipresenseRadar.svg)](https://badge.fury.io/py/OmnipresenseRadar)
-[![Python versions](https://img.shields.io/pypi/pyversions/OmnipresenseRadar.svg)](https://pypi.org/project/OmnipresenseRadar/)
+[![PyPI version](https://badge.fury.io/py/omnipresense.svg)](https://badge.fury.io/py/omnipresense)
+[![Python versions](https://img.shields.io/pypi/pyversions/omnipresense.svg)](https://pypi.org/project/omnipresense/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Downloads](https://pepy.tech/badge/OmnipresenseRadar)](https://pepy.tech/project/OmnipresenseRadar)
+[![Downloads](https://pepy.tech/badge/omnipresense)](https://pepy.tech/project/omnipresense)
 [![Build Status](https://github.com/yourusername/OmnipresenseRadar/workflows/CI/badge.svg)](https://github.com/yourusername/OmnipresenseRadar/actions)
 
 **A comprehensive, type-safe Python interface for OmniPreSense radar sensors**
@@ -50,13 +50,13 @@
 ### Installation
 
 ```bash
-pip install OmnipresenseRadar
+pip install omnipresense
 ```
 
 ### Basic Usage
 
 ```python
-from new_radar import create_radar, Units, SamplingRate
+from omnipresense import create_radar, Units, SamplingRate
 import time
 
 # Create radar sensor
@@ -93,7 +93,7 @@ with radar:
 ### Doppler Radar (Speed Detection)
 
 ```python
-from new_radar import create_radar, Units, Direction
+from omnipresense import create_radar, Units, Direction
 
 radar = create_radar('OPS241-A', '/dev/ttyUSB0')
 
@@ -111,7 +111,7 @@ with radar:
 ### FMCW Radar (Range Detection)
 
 ```python
-from new_radar import create_radar, Units
+from omnipresense import create_radar, Units
 
 radar = create_radar('OPS241-B', '/dev/ttyUSB0')
 
@@ -129,7 +129,7 @@ with radar:
 ### Combined Radar (Speed + Range)
 
 ```python
-from new_radar import create_radar, Units, SamplingRate
+from omnipresense import create_radar, Units, SamplingRate
 
 radar = create_radar('OPS243-C', '/dev/ttyUSB0')
 
@@ -158,7 +158,7 @@ with radar:
 ### Power Management
 
 ```python
-from new_radar import PowerMode
+from omnipresense import PowerMode
 
 # Set power modes for battery optimization
 radar.set_power_mode(PowerMode.IDLE)     # Low power mode
@@ -168,7 +168,7 @@ radar.set_duty_cycle(100, 1000)          # 100ms active, 1000ms sleep
 ### Data Output Formats
 
 ```python
-from new_radar import OutputMode
+from omnipresense import OutputMode
 
 # Enable multiple output modes
 radar.enable_json_output(True)           # JSON format
@@ -219,7 +219,7 @@ print(f"Board ID: {radar.get_board_id()}")
 ## 🛡️ Error Handling
 
 ```python
-from new_radar import (
+from omnipresense import (
     RadarError, RadarConnectionError, 
     RadarCommandError, RadarValidationError
 )
@@ -230,11 +230,11 @@ try:
         # ... use radar
         
 except RadarConnectionError:
-    print("❌ Could not connect to radar sensor")
+    print("Could not connect to radar sensor")
 except RadarValidationError as e:
-    print(f"⚠️ Configuration error: {e}")
+    print(f"Configuration error: {e}")
 except RadarError as e:
-    print(f"❌ Radar error: {e}")
+    print(f"Radar error: {e}")
 ```
 
 ## 📚 Documentation
@@ -270,7 +270,7 @@ pre-commit install
 pytest
 
 # Run with coverage
-pytest --cov=omnipresense_radar
+pytest --cov=omnipresense
 
 # Run specific test file
 pytest tests/test_doppler_radar.py -v
@@ -283,17 +283,17 @@ pytest tests/test_doppler_radar.py -v
 pre-commit run --all-files
 
 # Format code manually (if needed)
-black omnipresenseradar/ tests/
+black omnipresense/ tests/
 
 # Type checking
-mypy omnipresenseradar/
+mypy omnipresense/
 
 # Linting with ruff
-ruff check omnipresenseradar/ tests/
-ruff format omnipresenseradar/ tests/
+ruff check omnipresense/ tests/
+ruff format omnipresense/ tests/
 
 # Security scanning
-bandit -r omnipresenseradar/
+bandit -r omnipresense/
 ```
 
 ### Pre-commit Hooks

@@ -37,16 +37,16 @@ Author: Oskar Graeb graeb.oskar@gmail.com
 License: MIT
 """
 
-import time
-import serial
-import threading
-import logging
 import json
+import logging
+import threading
+import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional, Callable, Dict, List, Any
 from enum import Enum, IntEnum
+from typing import Any, Callable, Dict, List, Optional
 
+import serial
 
 # Configure logging
 logger = logging.getLogger(__name__)
