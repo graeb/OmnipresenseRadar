@@ -2,12 +2,12 @@
 
 <div align="center">
 
-[![PyPI version](https://badge.fury.io/py/omnipresense-radar.svg)](https://badge.fury.io/py/omnipresense-radar)
-[![Python versions](https://img.shields.io/pypi/pyversions/omnipresense-radar.svg)](https://pypi.org/project/omnipresense-radar/)
+[![PyPI version](https://badge.fury.io/py/OmnipresenseRadar.svg)](https://badge.fury.io/py/OmnipresenseRadar)
+[![Python versions](https://img.shields.io/pypi/pyversions/OmnipresenseRadar.svg)](https://pypi.org/project/OmnipresenseRadar/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Downloads](https://pepy.tech/badge/omnipresense-radar)](https://pepy.tech/project/omnipresense-radar)
-[![Build Status](https://github.com/yourusername/omnipresense-radar/workflows/CI/badge.svg)](https://github.com/yourusername/omnipresense-radar/actions)
+[![Downloads](https://pepy.tech/badge/OmnipresenseRadar)](https://pepy.tech/project/OmnipresenseRadar)
+[![Build Status](https://github.com/yourusername/OmnipresenseRadar/workflows/CI/badge.svg)](https://github.com/yourusername/OmnipresenseRadar/actions)
 
 **A comprehensive, type-safe Python interface for OmniPreSense radar sensors**
 
@@ -15,25 +15,25 @@
 
 > **⚠️ DISCLAIMER**: This is an **unofficial**, community-developed library. The author is **not affiliated** with OmniPreSense Corp. This library provides a Python interface for OmniPreSense radar sensors but is not endorsed or supported by the company.
 
-[=� Quick Start](#quick-start) " [=� Documentation](#documentation) " [=� Examples](#examples) " [> Contributing](#contributing)
+[🚀 Quick Start](#quick-start) • [📚 Documentation](#documentation) • [💡 Examples](#examples) • [🤝 Contributing](#contributing)
 
 </div>
 
 ---
 
-## ( Features
+## ✨ Features
 
-- <� **Complete API Coverage** - All commands from the [official API documentation](https://omnipresense.com/wp-content/uploads/2019/10/AN-010-Q_API_Interface.pdf)
-- = **Type-Safe** - Full typing support with comprehensive enums and data classes
-- <� **Multiple Sensor Support** - Doppler (-A), FMCW (-B), and combined (-C) sensor types
-- >� **Thread-Safe** - Robust serial communication with proper synchronization
-- =' **Context Managers** - Automatic resource cleanup with `with` statements
-- =� **Rich Data Structures** - Structured radar readings with timestamps and metadata
-- � **High Performance** - Efficient data streaming with configurable callbacks
-- =� **Error Handling** - Comprehensive exception hierarchy with detailed messages
-- =� **Well Documented** - Extensive docstrings and usage examples
+- 📋 **Complete API Coverage** - All commands from the [official API documentation](https://omnipresense.com/wp-content/uploads/2019/10/AN-010-Q_API_Interface.pdf)
+- 🔒 **Type-Safe** - Full typing support with comprehensive enums and data classes
+- 📡 **Multiple Sensor Support** - Doppler (-A), FMCW (-B), and combined (-C) sensor types
+- 🧵 **Thread-Safe** - Robust serial communication with proper synchronization
+- 🔧 **Context Managers** - Automatic resource cleanup with `with` statements
+- 📊 **Rich Data Structures** - Structured radar readings with timestamps and metadata
+- ⚡ **High Performance** - Efficient data streaming with configurable callbacks
+- 🛡️ **Error Handling** - Comprehensive exception hierarchy with detailed messages
+- 📚 **Well Documented** - Extensive docstrings and usage examples
 
-## <� Supported Models
+## 📡 Supported Models
 
 | Model | Type | Features | Detection Range | Max Speed |
 |-------|------|----------|----------------|-----------|
@@ -45,12 +45,12 @@
 
 *Range measurement pending in firmware
 
-## =� Quick Start
+## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-pip install omnipresense-radar
+pip install OmnipresenseRadar
 ```
 
 ### Basic Usage
@@ -72,23 +72,23 @@ with radar:
     # Define callback for radar data
     def on_detection(reading):
         if reading.speed and reading.speed > 1.0:
-            print(f"<� Speed: {reading.speed:.2f} m/s")
-            print(f"=� Direction: {reading.direction.value}")
-            print(f"=� Magnitude: {reading.magnitude}")
+            print(f"Speed: {reading.speed:.2f} m/s")
+            print(f"Direction: {reading.direction.value}")
+            print(f"Magnitude: {reading.magnitude}")
     
     # Start streaming data
     radar.start_streaming(on_detection)
     time.sleep(10)  # Stream for 10 seconds
 ```
 
-## =� Requirements
+## 📋 Requirements
 
 - **Python**: 3.7+
 - **Dependencies**:
   - `pyserial` >= 3.4
   - `typing-extensions` (Python < 3.8)
 
-## =� Examples
+## 💡 Examples
 
 ### Doppler Radar (Speed Detection)
 
@@ -153,7 +153,7 @@ with radar:
     radar.start_streaming(combined_callback)
 ```
 
-## � Advanced Configuration
+## ⚙️ Advanced Configuration
 
 ### Power Management
 
@@ -186,7 +186,7 @@ radar.set_range_filter(min_range=2.0, max_range=25.0)
 radar.set_magnitude_threshold(50)        # Noise filtering
 ```
 
-## =� Data Structure
+## 📊 Data Structure
 
 The `RadarReading` object contains:
 
@@ -201,7 +201,7 @@ class RadarReading:
     raw_data: Optional[str]            # Original data string
 ```
 
-## =' Sensor Information
+## ℹ️ Sensor Information
 
 ```python
 # Get comprehensive sensor info
@@ -216,7 +216,7 @@ print(f"Frequency: {radar.get_frequency()} Hz")
 print(f"Board ID: {radar.get_board_id()}")
 ```
 
-## =� Error Handling
+## 🛡️ Error Handling
 
 ```python
 from new_radar import (
@@ -230,27 +230,27 @@ try:
         # ... use radar
         
 except RadarConnectionError:
-    print("L Could not connect to radar sensor")
+    print("❌ Could not connect to radar sensor")
 except RadarValidationError as e:
-    print(f"L Configuration error: {e}")
+    print(f"⚠️ Configuration error: {e}")
 except RadarError as e:
-    print(f"L Radar error: {e}")
+    print(f"❌ Radar error: {e}")
 ```
 
-## =� Documentation
+## 📚 Documentation
 
 - **[API Reference](docs/api.md)** - Complete method documentation
 - **[Hardware Guide](docs/hardware.md)** - Sensor setup and wiring
 - **[Examples](examples/)** - Complete working examples
 - **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
 
-## >� Development
+## 🔧 Development
 
 ### Setup Development Environment
 
 ```bash
-git clone https://github.com/yourusername/omnipresense-radar.git
-cd omnipresense-radar
+git clone https://github.com/yourusername/OmnipresenseRadar.git
+cd OmnipresenseRadar
 
 # Create virtual environment
 python -m venv venv
@@ -258,6 +258,9 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install development dependencies
 pip install -e ".[dev]"
+
+# Install pre-commit hooks
+pre-commit install
 ```
 
 ### Running Tests
@@ -276,17 +279,38 @@ pytest tests/test_doppler_radar.py -v
 ### Code Quality
 
 ```bash
-# Format code
-black omnipresense_radar/ tests/
+# Run all pre-commit hooks on all files
+pre-commit run --all-files
+
+# Format code manually (if needed)
+black omnipresenseradar/ tests/
 
 # Type checking
-mypy omnipresense_radar/
+mypy omnipresenseradar/
 
-# Linting
-flake8 omnipresense_radar/ tests/
+# Linting with ruff
+ruff check omnipresenseradar/ tests/
+ruff format omnipresenseradar/ tests/
+
+# Security scanning
+bandit -r omnipresenseradar/
 ```
 
-## > Contributing
+### Pre-commit Hooks
+
+This project uses pre-commit hooks to ensure code quality. The following checks run automatically on each commit:
+
+- **Code Formatting**: Black, isort for consistent style
+- **Linting**: Ruff for code quality and style issues  
+- **Type Checking**: MyPy for static type analysis
+- **Security**: Bandit for security vulnerability scanning
+- **Dependencies**: Safety for known security vulnerabilities
+- **Documentation**: Pydocstyle for docstring conventions
+- **Import Management**: Autoflake removes unused imports
+- **Syntax Upgrades**: PyUpgrade modernizes Python syntax
+- **Commit Messages**: Conventional commit format validation
+
+## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
@@ -298,17 +322,17 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ### Ways to Contribute
 
-- = **Bug Reports** - Found an issue? Let us know!
-- =� **Feature Requests** - Have ideas? We'd love to hear them!
-- =� **Documentation** - Help improve our docs
-- >� **Testing** - Add tests for better coverage
-- =� **Code** - Fix bugs or add new features
+- 🐛 **Bug Reports** - Found an issue? Let us know!
+- 💡 **Feature Requests** - Have ideas? We'd love to hear them!
+- 📚 **Documentation** - Help improve our docs
+- 🧪 **Testing** - Add tests for better coverage
+- 💻 **Code** - Fix bugs or add new features
 
-## =� License
+## 📄 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
-## =O Acknowledgments
+## 🙏 Acknowledgments
 
 - **[OmniPreSense](https://omnipresense.com/)** for creating excellent radar sensors and comprehensive documentation
 - **Contributors** who help improve this library
@@ -323,18 +347,18 @@ This project is an **independent, unofficial** implementation developed by the c
 - **Support**: For hardware issues, contact [OmniPreSense directly](https://omnipresense.com/support/). For library issues, use our GitHub Issues.
 - **Warranty**: This software comes with no warranty. Use at your own risk.
 
-## =� Support
+## 🆘 Support
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/yourusername/omnipresense-radar/issues)
-- **Documentation**: [Read the full docs](https://omnipresense-radar.readthedocs.io/)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/yourusername/OmnipresenseRadar/issues)
+- **Documentation**: [Read the full docs](https://OmnipresenseRadar.readthedocs.io/)
 - **Email**: <graeb.oskar@gmail.com>
 
 ---
 
 <div align="center">
 
-**P Star this repo if it helps you build amazing radar applications! P**
+**⭐ Star this repo if it helps you build amazing radar applications! ⭐**
 
-*Made with d for the radar sensing community*
+*Made with ❤️ for the radar sensing community*
 
 </div>
