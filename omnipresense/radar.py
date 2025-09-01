@@ -412,20 +412,54 @@ class OPSRadarSensor(ABC):
         """Internal method to query sensor information."""
         try:
             # Get basic info
-            version = self.send_command("??", expect_response=True) or "Unknown"
-            board_id = self.send_command("?P", expect_response=True) or "Unknown"
-            frequency = self.send_command("?F", expect_response=True) or "0"
+            response = self.send_command("??", expect_response=True) or "Unknown"
 
-            # Parse frequency
-            try:
-                freq_val = float(frequency.split()[-1]) if frequency != "0" else 0.0
-            except (ValueError, IndexError):
-                freq_val = 0.0
+            # Parse the JSON response if available
+            version = "Unknown"
+            board_id = "Unknown"
+            freq_val = 0.0
+
+            if response and response != "Unknown":
+                try:
+                    # Handle multiple JSON objects in response
+                    lines = response.strip().split("\n")
+                    for line in lines:
+                        if line.strip().startswith("{"):
+                            import json
+
+                            data = json.loads(line.strip())
+                            if "Version" in data:
+                                version = data["Version"]
+                            elif "rev" in data:
+                                board_id = data["rev"]
+                            elif "Product" in data and "OPS243-C" in data["Product"]:
+                                freq_val = 24.125e9  # 24.125 GHz for OPS243-C
+                except (json.JSONDecodeError, ValueError) as e:
+                    logger.debug(f"JSON parsing error: {e}")
+                    # Fallback to simple parsing
+                    version = response[:50] if len(response) > 50 else response
+
+            # Try to get board ID separately if not found
+            if board_id == "Unknown":
+                board_id = self.send_command("?P", expect_response=True) or "Unknown"
+
+            # Try to get frequency separately if not found
+            if freq_val == 0.0:
+                frequency = self.send_command("?F", expect_response=True) or "0"
+                try:
+                    freq_val = float(frequency.split()[-1]) if frequency != "0" else 0.0
+                except (ValueError, IndexError):
+                    freq_val = 0.0
 
             # Determine sensor capabilities based on model
             model = self.__class__.__name__
             has_doppler = "Doppler" in model or "Combined" in model
             has_fmcw = "FMCW" in model or "Combined" in model
+
+            # For OPS243C, it has both capabilities
+            if "OPS243C" in model:
+                has_doppler = True
+                has_fmcw = True
 
             # Set detection ranges based on sensor type
             if "OPS241" in model:
@@ -826,13 +860,17 @@ class OPSRadarSensor(ABC):
                     line, buf = buf.split(b"\n", 1)
                     try:
                         line_str = line.decode("ascii", errors="ignore").strip()
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"Error decoding line: {e}")
                         line_str = ""
 
                     if line_str and self._callback:
-                        reading = self._parse_radar_data(line_str)
-                        if reading:
-                            self._callback(reading)
+                        try:
+                            reading = self._parse_radar_data(line_str)
+                            if reading:
+                                self._callback(reading)
+                        except Exception as e:
+                            logger.debug(f"Error in callback: {e}")
 
             except serial.SerialTimeoutException:
                 continue  # Normal timeout, continue loop
@@ -1099,6 +1137,37 @@ class OPS243C_CombinedRadar(OPSRadarSensor):
             # Handle JSON output
             if data.startswith("{"):
                 return self._parse_json_data(data)
+
+            # Handle OPS243-C specific format: "units",value
+            # Example: "m",2.1 or "mps",1.5
+            if '"' in data and "," in data:
+                # Parse format like "m",2.1 or "mps",1.5
+                parts = data.split(",")
+                if len(parts) >= 2:
+                    units_part = parts[0].strip().strip('"')
+                    value_str = parts[1].strip()
+
+                    try:
+                        value = float(value_str)
+                        reading = RadarReading()
+
+                        # Determine if this is speed or range based on units
+                        if units_part in ["mps", "mph", "kmh", "m/s", "km/h"]:
+                            # Speed data
+                            reading.speed = abs(value)
+                            # OPS243-C typically sends positive for approaching, negative for receding
+                            reading.direction = (
+                                Direction.APPROACHING
+                                if value >= 0
+                                else Direction.RECEDING
+                            )
+                        elif units_part in ["m", "ft", "cm"]:
+                            # Range data
+                            reading.range_m = value
+
+                        return reading
+                    except ValueError:
+                        pass
 
             # Handle standard output format: "speed direction range magnitude"
             # or various combinations depending on enabled outputs
