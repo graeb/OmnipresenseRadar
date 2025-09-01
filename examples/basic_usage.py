@@ -1,51 +1,51 @@
 """
 Basic Usage Example
 
-Simple example showing basic radar setup and data streaming.
+A minimal example showing how to get started with OmniPreSense radar sensors.
+This example uses kilometers per hour and shows speed, direction, and distance detection.
 """
 
 import time
 
-from omnipresense import SamplingRate, Units, create_radar
+from omnipresense import OutputMode, PowerMode, SamplingRate, Units, create_radar
 
 
 def main():
-    # Create radar sensor - will automatically detect capabilities
+    # Connect to radar sensor
     radar = create_radar("OPS243-C", "/dev/ttyACM0")
 
-    # Use context manager for automatic cleanup
     with radar:
-        # Get sensor information
-        info = radar.get_sensor_info()
-        print(f"Connected to: {info.model}")
-        print(f"Firmware: {info.firmware_version}")
-        print(f"Detection range: {info.detection_range}")
-        print(f"Features: Doppler={info.has_doppler}, FMCW={info.has_fmcw}")
-        print("-" * 50)
+        # Configure sensor for speed detection in km/h
+        radar.set_power_mode(PowerMode.ACTIVE)
+        radar.set_units(Units.KILOMETERS_PER_HOUR)
+        radar.set_data_precision(2)
+        radar.set_sampling_rate(SamplingRate.HZ_1000)
+        radar.set_duty_cycle(5, 0)
 
-        # Configure sensor
-        radar.set_units(Units.METERS_PER_SECOND)
-        radar.set_sampling_rate(SamplingRate.HZ_10000)
-        radar.set_magnitude_threshold(20)
+        # Enable output modes (required for data transmission)
+        radar.enable_output_mode(OutputMode.SPEED, True)
+        radar.enable_output_mode(OutputMode.DIRECTION, True)
+        radar.enable_output_mode(OutputMode.MAGNITUDE, True)
 
-        # Simple callback function
+        print("Radar configured. Move something in front of the sensor...")
+
+        # Define callback for radar readings
         def on_detection(reading):
-            if reading.speed and reading.speed > 1.0:  # Filter out slow movements
-                print(f"Detected: {reading.speed:.2f} m/s")
-                if reading.direction:
-                    print(f"  Direction: {reading.direction.value}")
-                if reading.magnitude:
-                    print(f"  Signal strength: {reading.magnitude:.0f}")
-                print()
+            print(f"Raw data: '{reading.raw_data}'")
+            direction = reading.direction.value if reading.direction else "?"
+            distance = f", Distance: {reading.range_m:.1f}m" if reading.range_m else ""
+            speed_text = (
+                f"Speed: {reading.speed:.1f} km/h" if reading.speed else "No speed"
+            )
+            print(f"{speed_text}, Direction: {direction}{distance}")
 
-        # Start streaming data
-        print("Starting radar detection...")
+        # Start data streaming
         radar.start_streaming(on_detection)
 
-        # Let it run for 10 seconds
+        # Run for 10 seconds
         time.sleep(10)
 
-        print("Detection stopped.")
+        print("Detection complete.")
 
 
 if __name__ == "__main__":

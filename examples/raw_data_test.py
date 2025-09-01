@@ -7,17 +7,22 @@ This helps verify if the sensor is sending any data at all.
 
 import time
 
-from omnipresense import create_radar
+from omnipresense import create_radar, OutputMode
 
 
 def main():
     radar = create_radar("OPS243-C", "/dev/ttyACM0")
 
     with radar:
-        print("🔍 Raw data monitor - showing ALL data from sensor")
+        print("Raw data monitor - showing ALL data from sensor")
         print("Move around in front of the sensor...")
         print("=" * 60)
 
+        # Enable output modes for data transmission
+        radar.enable_output_mode(OutputMode.SPEED, True)
+        radar.enable_output_mode(OutputMode.DIRECTION, True)
+        radar.enable_output_mode(OutputMode.MAGNITUDE, True)
+        
         data_received = False
 
         def raw_callback(reading):
@@ -25,7 +30,7 @@ def main():
             data_received = True
 
             # Show the raw data string exactly as received
-            print(f"📡 Raw: '{reading.raw_data}' | Timestamp: {reading.timestamp:.3f}")
+            print(f"Raw: '{reading.raw_data}' | Timestamp: {reading.timestamp:.3f}")
 
             # Show what got parsed
             if reading.speed or reading.range_m or reading.magnitude:
@@ -50,12 +55,12 @@ def main():
         for i in range(20):
             time.sleep(1)
             if i % 5 == 4:  # Every 5 seconds
-                print(f"⏰ {i+1} seconds elapsed...")
+                print(f"{i + 1} seconds elapsed...")
 
         radar.stop_streaming()
 
         if not data_received:
-            print("\n❌ No raw data received from sensor!")
+            print("\nNo raw data received from sensor!")
             print("The sensor may not be sending any data.")
             print("Try:")
             print("1. Check if sensor is powered on")

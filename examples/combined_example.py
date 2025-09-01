@@ -7,7 +7,7 @@ simultaneous speed and range measurements.
 
 import time
 
-from omnipresense import Direction, SamplingRate, Units, create_radar
+from omnipresense import Direction, SamplingRate, Units, OutputMode, create_radar
 
 
 def main():
@@ -24,6 +24,10 @@ def main():
         radar.set_speed_filter(min_speed=0.5, max_speed=30.0)
         radar.set_range_filter(min_range=1.0, max_range=50.0)
 
+        # Enable required output modes for combined detection
+        radar.enable_output_mode(OutputMode.SPEED, True)
+        radar.enable_output_mode(OutputMode.DIRECTION, True) 
+        radar.enable_output_mode(OutputMode.MAGNITUDE, True)
         # Enable enhanced output modes
         radar.enable_json_output(True)
         radar.enable_magnitude_output(True)

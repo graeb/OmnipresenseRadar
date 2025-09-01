@@ -240,7 +240,7 @@ class OPSRadarSensor(ABC):
         PowerMode.SLEEP: "PP",
     }
 
-    # Duty cycle command mappings (fixed from original)
+    # Duty cycle command mappings
     DUTY_CYCLE_COMMANDS = {
         0: "W0",
         1: "WI",
@@ -260,7 +260,7 @@ class OPSRadarSensor(ABC):
         1000: "WT",
     }
 
-    def __init__(self, port: str, baudrate: int = 115200, timeout: float = 1.0):
+    def __init__(self, port: str, baudrate: int = 115200, timeout: float = 0.1):
         """
         Initialize radar sensor.
 
@@ -425,8 +425,6 @@ class OPSRadarSensor(ABC):
                     lines = response.strip().split("\n")
                     for line in lines:
                         if line.strip().startswith("{"):
-                            import json
-
                             data = json.loads(line.strip())
                             if "Version" in data:
                                 version = data["Version"]
@@ -1001,6 +999,7 @@ class OPS241A_DopplerRadar(OPSRadarSensor):
                     speed=abs(speed),  # Speed is always positive
                     direction=direction,
                     magnitude=magnitude,
+                    raw_data=data.strip(),
                 )
 
         except (ValueError, IndexError) as e:
@@ -1138,10 +1137,10 @@ class OPS243C_CombinedRadar(OPSRadarSensor):
             if data.startswith("{"):
                 return self._parse_json_data(data)
 
-            # Handle OPS243-C specific format: "units",value
-            # Example: "m",2.1 or "mps",1.5
+            # Handle OPS243-C specific format: "units",value or "units",value,extra
+            # Example: "m",2.1 or "kmph",48,-1.3
             if '"' in data and "," in data:
-                # Parse format like "m",2.1 or "mps",1.5
+                # Parse format like "m",2.1 or "kmph",48,-1.3
                 parts = data.split(",")
                 if len(parts) >= 2:
                     units_part = parts[0].strip().strip('"')
@@ -1149,10 +1148,10 @@ class OPS243C_CombinedRadar(OPSRadarSensor):
 
                     try:
                         value = float(value_str)
-                        reading = RadarReading()
+                        reading = RadarReading(raw_data=data.strip())
 
                         # Determine if this is speed or range based on units
-                        if units_part in ["mps", "mph", "kmh", "m/s", "km/h"]:
+                        if units_part in ["mps", "mph", "kmh", "kmph", "m/s", "km/h"]:
                             # Speed data
                             reading.speed = abs(value)
                             # OPS243-C typically sends positive for approaching, negative for receding
@@ -1161,6 +1160,17 @@ class OPS243C_CombinedRadar(OPSRadarSensor):
                                 if value >= 0
                                 else Direction.RECEDING
                             )
+                            
+                            # Check for third value (might be additional data or range)
+                            if len(parts) >= 3:
+                                try:
+                                    third_val = float(parts[2].strip())
+                                    # If it's a reasonable range value, use it
+                                    if 0 < abs(third_val) < 100:  # Reasonable range in meters
+                                        reading.range_m = abs(third_val)
+                                except ValueError:
+                                    pass
+                                    
                         elif units_part in ["m", "ft", "cm"]:
                             # Range data
                             reading.range_m = value
@@ -1173,7 +1183,7 @@ class OPS243C_CombinedRadar(OPSRadarSensor):
             # or various combinations depending on enabled outputs
             parts = data.split()
             if len(parts) >= 1:
-                reading = RadarReading()
+                reading = RadarReading(raw_data=data.strip())
 
                 # Parse based on number of parts and content
                 if len(parts) >= 4:
