@@ -27,6 +27,13 @@ def main():
         radar.enable_output_mode(OutputMode.DIRECTION, True)
         radar.enable_output_mode(OutputMode.MAGNITUDE, True)
 
+        # Optional: Set movement timeout to get zero-speed readings when movement stops
+        radar.set_movement_timeout(
+            1.0
+        )  # Send zero-speed after 2 seconds of no movement
+        # radar.set_movement_timeout(0.0)  # Send zero-speed immediately on empty cycles
+        # radar.set_movement_timeout(None) # No timeout (default)
+
         print("Radar configured. Move something in front of the sensor...")
 
         # Define callback for radar readings
@@ -34,9 +41,7 @@ def main():
             print(f"Raw data: '{reading.raw_data}'")
             direction = reading.direction.value if reading.direction else "?"
             distance = f", Distance: {reading.range_m:.1f}m" if reading.range_m else ""
-            speed_text = (
-                f"Speed: {reading.speed:.1f} km/h" if reading.speed else "No speed"
-            )
+            speed_text = f"Speed: {reading.speed:.1f} km/h"
             print(f"{speed_text}, Direction: {direction}{distance}")
 
         # Start data streaming

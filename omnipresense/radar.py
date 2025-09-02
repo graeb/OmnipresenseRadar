@@ -209,6 +209,7 @@ class RadarConfig:
     buffer_size: int = 1024
     duty_cycle_short: int = 0
     duty_cycle_long: int = 0
+    movement_timeout: Optional[float] = None
 
 
 # =============================================================================
@@ -279,6 +280,11 @@ class OPSRadarSensor(ABC):
         self._config = RadarConfig()
         self._sensor_info: Optional[SensorInfo] = None
         self._lock = threading.RLock()
+
+        # Timeout tracking variables
+        self._last_movement_time: Optional[float] = None
+        self._last_reading: Optional[RadarReading] = None
+        self._timeout_sent: bool = False
 
         logger.info(f"Initialized {self.__class__.__name__} on port {port}")
 
@@ -670,6 +676,35 @@ class OPSRadarSensor(ABC):
             self._config.duty_cycle_long = long_ms
             logger.info(f"Set long duty cycle to {long_ms}ms")
 
+    def set_movement_timeout(self, timeout: Optional[float] = None) -> None:
+        """
+        Set movement timeout for automatic zero-speed reporting.
+
+        Args:
+            timeout: Timeout in seconds (None=disabled, 0=immediate, >0=delayed)
+                    - None: No timeout behavior (default)
+                    - 0.0: Send zero-speed immediately when no data in refresh cycle
+                    - >0.0: Send zero-speed after specified seconds of no movement
+        """
+        if timeout is not None and timeout < 0:
+            raise RadarValidationError("Timeout must be None, 0, or positive")
+
+        self._config.movement_timeout = timeout
+
+        # Reset timeout state when changing timeout settings
+        with self._lock:
+            self._last_movement_time = None
+            self._timeout_sent = False
+
+        if timeout is None:
+            logger.info("Movement timeout disabled")
+        elif timeout == 0.0:
+            logger.info(
+                "Movement timeout set to immediate (zero-speed on empty cycles)"
+            )
+        else:
+            logger.info(f"Movement timeout set to {timeout} seconds")
+
     # =============================================================================
     # Filter Commands
     # =============================================================================
@@ -840,6 +875,7 @@ class OPSRadarSensor(ABC):
         """Main data reading loop - runs in separate thread."""
         logger.debug("Radar data reader thread started")
         buf = b""
+        last_check_time = time.time()
 
         while not self._stop_event.is_set():
             try:
@@ -848,10 +884,11 @@ class OPSRadarSensor(ABC):
 
                 # Read chunk with timeout
                 chunk = self.ser.read(1024) if self.ser else b""
-                if not chunk:
-                    continue
+                data_received = False
 
-                buf += chunk
+                if chunk:
+                    buf += chunk
+                    data_received = True
 
                 # Process complete lines from buffer
                 while b"\n" in buf:
@@ -866,12 +903,30 @@ class OPSRadarSensor(ABC):
                         try:
                             reading = self._parse_radar_data(line_str)
                             if reading:
+                                # Update movement tracking when speed is detected
+                                if reading.speed is not None and reading.speed > 0:
+                                    with self._lock:
+                                        self._last_movement_time = time.time()
+                                        self._last_reading = reading
+                                        self._timeout_sent = False
+
                                 self._callback(reading)
                         except Exception as e:
                             logger.debug(f"Error in callback: {e}")
 
+                # Check for timeout conditions
+                current_time = time.time()
+                if current_time - last_check_time >= 0.1:  # Check every 100ms
+                    last_check_time = current_time
+                    self._check_movement_timeout(current_time, data_received)
+
             except serial.SerialTimeoutException:
-                continue  # Normal timeout, continue loop
+                # Check timeout on normal serial timeout as well
+                current_time = time.time()
+                if current_time - last_check_time >= 0.1:
+                    last_check_time = current_time
+                    self._check_movement_timeout(current_time, False)
+                continue
             except Exception as e:
                 if not self._stop_event.is_set():
                     logger.error(f"Radar read error: {e}")
@@ -889,6 +944,53 @@ class OPSRadarSensor(ABC):
                 logger.debug(f"Error parsing radar data: {e}")
 
         logger.debug("Radar data reader thread ended")
+
+    def _check_movement_timeout(self, current_time: float, data_received: bool) -> None:
+        """Check if movement timeout has occurred and send zero-speed reading if needed."""
+        if self._config.movement_timeout is None or not self._callback:
+            return
+
+        # Only apply timeout to sensors that support speed (Doppler sensors)
+        if not self.get_sensor_info().has_doppler:
+            return
+
+        with self._lock:
+            if self._config.movement_timeout == 0.0:
+                # Immediate timeout - send zero-speed when no data received in this cycle
+                if not data_received and not self._timeout_sent and self._last_reading:
+                    self._send_zero_speed_reading()
+                    self._timeout_sent = True
+            elif self._config.movement_timeout > 0.0:
+                # Delayed timeout - send zero-speed after specified time
+                if (
+                    self._last_movement_time is not None
+                    and current_time - self._last_movement_time
+                    >= self._config.movement_timeout
+                    and not self._timeout_sent
+                ):
+                    self._send_zero_speed_reading()
+                    self._timeout_sent = True
+
+    def _send_zero_speed_reading(self) -> None:
+        """Send a synthetic zero-speed reading to callback."""
+        if not self._callback or not self._last_reading:
+            return
+
+        # Create zero-speed reading based on last reading
+        zero_reading = RadarReading(
+            timestamp=time.time(),
+            speed=0.0,
+            direction=self._last_reading.direction,  # Keep last known direction
+            range_m=self._last_reading.range_m,  # Keep last known range
+            magnitude=None,  # No magnitude for synthetic reading
+            raw_data="timeout_zero_speed",
+        )
+
+        try:
+            self._callback(zero_reading)
+            logger.debug("Sent zero-speed timeout reading")
+        except Exception as e:
+            logger.debug(f"Error sending zero-speed reading: {e}")
 
     @abstractmethod
     def _parse_radar_data(self, data: str) -> Optional[RadarReading]:
@@ -1160,17 +1262,19 @@ class OPS243C_CombinedRadar(OPSRadarSensor):
                                 if value >= 0
                                 else Direction.RECEDING
                             )
-                            
+
                             # Check for third value (might be additional data or range)
                             if len(parts) >= 3:
                                 try:
                                     third_val = float(parts[2].strip())
                                     # If it's a reasonable range value, use it
-                                    if 0 < abs(third_val) < 100:  # Reasonable range in meters
+                                    if (
+                                        0 < abs(third_val) < 100
+                                    ):  # Reasonable range in meters
                                         reading.range_m = abs(third_val)
                                 except ValueError:
                                     pass
-                                    
+
                         elif units_part in ["m", "ft", "cm"]:
                             # Range data
                             reading.range_m = value
